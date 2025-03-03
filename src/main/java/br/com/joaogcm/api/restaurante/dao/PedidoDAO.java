@@ -1,0 +1,226 @@
+package br.com.joaogcm.api.restaurante.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import br.com.joaogcm.api.restaurante.connection.ConexaoBancoDeDados;
+import br.com.joaogcm.api.restaurante.dto.ClienteDTO;
+import br.com.joaogcm.api.restaurante.dto.LancheDTO;
+import br.com.joaogcm.api.restaurante.dto.PedidoDTO;
+
+public class PedidoDAO {
+
+	private PreparedStatement ps = null;
+	private ResultSet rs = null;
+	private Connection conn = null;
+
+	public PedidoDAO() {
+
+	}
+
+	public PedidoDTO criarPedido(PedidoDTO pedidoDTO) {
+		PedidoDTO newPedidoDTO = null;
+
+		String sql = "INSERT INTO pedido (data_pedido, cliente_id, total, observacao) VALUES (?, ?, ?, ?)";
+		String sql2 = "INSERT INTO pedido_lanche (codigo_pedido, codigo_lanche) VALUES (?, ?)";
+
+		try {
+			conn = ConexaoBancoDeDados.getConexao();
+
+			ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+			ps.setTimestamp(1, Timestamp.valueOf(pedidoDTO.getDataPedido()));
+			ps.setInt(2, pedidoDTO.getCliente().getCodigo());
+			ps.setBigDecimal(3, pedidoDTO.getTotal());
+			ps.setString(4, pedidoDTO.getObservacao());
+
+			if (ps.executeUpdate() > 0) {
+				ResultSet gerarCodigo = ps.getGeneratedKeys();
+
+				while (gerarCodigo.next()) {
+					int codigoGerado = gerarCodigo.getInt(1);
+
+					if (!pedidoDTO.getLanches().isEmpty()) {
+						try {
+							PreparedStatement ps2 = conn.prepareStatement(sql2);
+
+							for (LancheDTO lancheDTO : pedidoDTO.getLanches()) {
+								ps2.setInt(1, codigoGerado);
+								ps2.setInt(2, lancheDTO.getCodigo());
+
+								ps2.addBatch();
+							}
+
+							ps2.executeBatch();
+						} catch (SQLException e) {
+							conn.rollback();
+							throw new RuntimeException(
+									"Não foi possível adicionar os lanches ao pedido: " + e.getMessage());
+						}
+					}
+
+					conn.commit();
+					newPedidoDTO = listarPedidoPorCodigo(codigoGerado);
+				}
+			} else {
+				conn.rollback();
+				return null;
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Não foi possível criar o pedido: " + e.getMessage());
+		}
+
+		return newPedidoDTO;
+	}
+
+	public PedidoDTO atualizarPedidoPorCodigo(Integer codigo, PedidoDTO pedidoDTO) {
+		String sql = "UPDATE pedido SET data_pedido = ?, cliente_id = ?, total = ?, observacao = ? WHERE codigo = ?";
+
+		try {
+			conn = ConexaoBancoDeDados.getConexao();
+
+			ps = conn.prepareStatement(sql);
+			ps.setTimestamp(1, Timestamp.valueOf(pedidoDTO.getDataPedido()));
+			ps.setInt(2, pedidoDTO.getCliente().getCodigo());
+			ps.setBigDecimal(3, pedidoDTO.getTotal());
+			ps.setString(4, pedidoDTO.getObservacao());
+			ps.setInt(5, codigo);
+
+			if (ps.executeUpdate() > 0) {
+				return listarPedidoPorCodigo(codigo);
+			} else {
+				return null;
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Não foi possível atualizar o pedido: " + e.getMessage());
+		}
+	}
+
+	public boolean removerPedidoPorCodigo(Integer codigo) {
+		String sql = "DELETE FROM pedido WHERE codigo = ?";
+
+		try {
+			conn = ConexaoBancoDeDados.getConexao();
+
+			ps = conn.prepareStatement(sql);
+			ps.setInt(1, codigo);
+
+			if (ps.executeUpdate() > 0) {
+				return true;
+			} else {
+				return false;
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Não foi possível remover o pedido: " + e.getMessage());
+		}
+	}
+
+	public Set<PedidoDTO> listarTodosPedidos() {
+		Set<PedidoDTO> pedidosDTO = new LinkedHashSet<PedidoDTO>();
+
+		String sql = "SELECT * FROM pedido";
+
+		try {
+			conn = ConexaoBancoDeDados.getConexao();
+
+			ps = conn.prepareStatement(sql);
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				PedidoDTO pedidoDTO = new PedidoDTO();
+				pedidoDTO.setCodigo(rs.getInt("CODIGO"));
+				pedidoDTO.setDataPedido(rs.getTimestamp("DATA_PEDIDO").toLocalDateTime());
+
+				ClienteDTO clienteDTO = new ClienteDTO();
+				clienteDTO.setCodigo(rs.getInt("CLIENTE_ID"));
+				pedidoDTO.setCliente(clienteDTO);
+
+				pedidoDTO.setTotal(rs.getBigDecimal("TOTAL"));
+				pedidoDTO.setObservacao(rs.getString("OBSERVACAO"));
+
+				pedidosDTO.add(pedidoDTO);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Não foi possível listar todos os pedidos: " + e.getMessage());
+		}
+
+		return pedidosDTO;
+	}
+
+	public PedidoDTO listarPedidoPorCodigo(Integer codigo) {
+		PedidoDTO pedidoDTO = null;
+
+		String sql = "SELECT * FROM pedido WHERE codigo = ?";
+
+		try {
+			conn = ConexaoBancoDeDados.getConexao();
+
+			ps = conn.prepareStatement(sql);
+			ps.setInt(1, codigo);
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				pedidoDTO = new PedidoDTO();
+				pedidoDTO.setCodigo(rs.getInt("CODIGO"));
+				pedidoDTO.setDataPedido(rs.getTimestamp("DATA_PEDIDO").toLocalDateTime());
+
+				ClienteDTO clienteDTO = new ClienteDTO();
+				clienteDTO.setCodigo(rs.getInt("CLIENTE_ID"));
+				pedidoDTO.setCliente(clienteDTO);
+
+				pedidoDTO.setTotal(rs.getBigDecimal("TOTAL"));
+				pedidoDTO.setObservacao(rs.getString("OBSERVACAO"));
+
+				pedidoDTO.setLanches(new LancheDAO().listarLanchesPorPedido(codigo));
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Não foi possível listar o lanche: " + e.getMessage());
+		}
+
+		return pedidoDTO;
+	}
+
+	public Set<PedidoDTO> listarTodosPedidosPorLanche(Integer codigoLanche) {
+		Set<PedidoDTO> pedidosDTO = new LinkedHashSet<PedidoDTO>();
+
+		String sql = "SELECT * FROM pedido p, lanche l, pedido_lanche pl " + "WHERE pl.codigo_pedido = p.codigo "
+				+ "AND pl.codigo_lanche = l.codigo " + "AND l.codigo = ?";
+
+		try {
+			conn = ConexaoBancoDeDados.getConexao();
+
+			ps = conn.prepareStatement(sql);
+			ps.setInt(1, codigoLanche);
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				PedidoDTO pedidoDTO = new PedidoDTO();
+				pedidoDTO = new PedidoDTO();
+				pedidoDTO.setCodigo(rs.getInt("CODIGO"));
+				pedidoDTO.setDataPedido(rs.getTimestamp("DATA_PEDIDO").toLocalDateTime());
+
+				ClienteDTO clienteDTO = new ClienteDTO();
+				clienteDTO.setCodigo(rs.getInt("CLIENTE_ID"));
+				pedidoDTO.setCliente(clienteDTO);
+
+				pedidoDTO.setTotal(rs.getBigDecimal("TOTAL"));
+				pedidoDTO.setObservacao(rs.getString("OBSERVACAO"));
+
+				pedidoDTO.setLanches(new LancheDAO().listarLanchesPorPedido(pedidoDTO.getCodigo()));
+
+				pedidosDTO.add(pedidoDTO);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Não foi possível listar todos os pedidos pelo lanche: " + e.getMessage());
+		}
+
+		return pedidosDTO;
+	}
+}
