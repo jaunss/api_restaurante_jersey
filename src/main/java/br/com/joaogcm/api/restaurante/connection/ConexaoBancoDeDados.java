@@ -1,40 +1,51 @@
 package br.com.joaogcm.api.restaurante.connection;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 public class ConexaoBancoDeDados {
 
-	private static Connection conn = null;
 	private static final String DRIVER = "com.mysql.cj.jdbc.Driver";
+	private static HikariDataSource hikariDataSource = null;
 
-	public static synchronized Connection getConexao() {
+	static {
 		Properties properties = new Properties();
 
 		try {
-			if (conn == null) {
-				ClassLoader classLoader = ConexaoBancoDeDados.class.getClassLoader();
+			ClassLoader classLoader = ConexaoBancoDeDados.class.getClassLoader();
 
-				properties.load(classLoader.getResourceAsStream("database.properties"));
+			properties.load(classLoader.getResourceAsStream("database.properties"));
 
-				String urlConexao = properties.getProperty("URL");
-				String usuario = properties.getProperty("USUARIO");
-				String senha = properties.getProperty("SENHA");
+			String urlConexao = properties.getProperty("URL");
+			String usuario = properties.getProperty("USUARIO");
+			String senha = properties.getProperty("SENHA");
 
-				Class.forName(DRIVER);
+			HikariConfig hikariConfig = new HikariConfig();
+			hikariConfig.setJdbcUrl(urlConexao);
+			hikariConfig.setUsername(usuario);
+			hikariConfig.setPassword(senha);
+			hikariConfig.setDriverClassName(DRIVER);
+			hikariConfig.setMaximumPoolSize(10);
+			hikariConfig.setMinimumIdle(2);
+			hikariConfig.setIdleTimeout(30000);
+			hikariConfig.setMaxLifetime(1800000);
+			hikariConfig.setConnectionTimeout(30000);
 
-				conn = DriverManager.getConnection(urlConexao, usuario, senha);
-			}
+			hikariDataSource = new HikariDataSource(hikariConfig);
 		} catch (Exception e) {
 			throw new RuntimeException(
 					"Não foi possível recuperar os dados de conexão com o banco de dados: " + e.getMessage());
 		}
+	}
 
-		return conn;
+	public static Connection getConexao() throws SQLException {
+		return hikariDataSource.getConnection();
 	}
 
 	public void fecharConexao(Connection conn) {
