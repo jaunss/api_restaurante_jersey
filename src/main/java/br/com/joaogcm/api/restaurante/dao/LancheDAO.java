@@ -55,8 +55,8 @@ public class LancheDAO {
 		}
 
 		String sql = "UPDATE lanche SET ";
+		
 		List<Object> parametros = new ArrayList<Object>();
-
 		boolean isCampoAdicionado = false;
 
 		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
