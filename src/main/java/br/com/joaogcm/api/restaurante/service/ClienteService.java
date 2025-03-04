@@ -28,6 +28,6 @@ public class ClienteService {
 	}
 
 	public ClienteDTO listarClientePorCodigo(Integer codigo) {
-		return listarClientePorCodigo(codigo);
+		return new ClienteDAO().listarClientePorCodigo(codigo);
 	}
 }

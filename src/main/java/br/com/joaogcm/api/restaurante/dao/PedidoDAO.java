@@ -5,7 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import br.com.joaogcm.api.restaurante.connection.ConexaoBancoDeDados;
@@ -70,14 +72,58 @@ public class PedidoDAO {
 	}
 
 	public PedidoDTO atualizarPedidoPorCodigo(Integer codigo, PedidoDTO pedidoDTO) {
-		String sql = "UPDATE pedido SET data_pedido = ?, cliente_id = ?, total = ?, observacao = ? WHERE codigo = ?";
+		String sql = " UPDATE pedido SET ";
+
+		List<Object> parametros = new ArrayList<Object>();
+		boolean isCampoAdicionado = false;
+
+		if (pedidoDTO.getDataPedido() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " data_pedido = ? ";
+			parametros.add(Timestamp.valueOf(pedidoDTO.getDataPedido()));
+			isCampoAdicionado = true;
+		}
+
+		if (pedidoDTO.getCliente() != null && pedidoDTO.getCliente().getCodigo() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " cliente_id = ? ";
+			parametros.add(pedidoDTO.getCliente().getCodigo());
+			isCampoAdicionado = true;
+		}
+
+		if (pedidoDTO.getTotal() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " total = ? ";
+			parametros.add(pedidoDTO.getTotal());
+			isCampoAdicionado = true;
+		}
+
+		if (pedidoDTO.getObservacao() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " observacao = ? ";
+			parametros.add(pedidoDTO.getObservacao());
+			isCampoAdicionado = true;
+		}
+
+		sql += " WHERE codigo = ? ";
+		parametros.add(codigo);
 
 		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setTimestamp(1, Timestamp.valueOf(pedidoDTO.getDataPedido()));
-			ps.setInt(2, pedidoDTO.getCliente().getCodigo());
-			ps.setBigDecimal(3, pedidoDTO.getTotal());
-			ps.setString(4, pedidoDTO.getObservacao());
-			ps.setInt(5, codigo);
+			for (int i = 0; i < parametros.size(); i++) {
+				ps.setObject(i + 1, parametros.get(i));
+			}
 
 			if (ps.executeUpdate() > 0) {
 				return listarPedidoPorCodigo(codigo);

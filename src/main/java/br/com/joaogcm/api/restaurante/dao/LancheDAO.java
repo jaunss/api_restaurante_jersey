@@ -58,38 +58,41 @@ public class LancheDAO {
 		
 		List<Object> parametros = new ArrayList<Object>();
 		boolean isCampoAdicionado = false;
+		
+		if (lancheDTO.getNome() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " nome = ? ";
+			parametros.add(lancheDTO.getNome());
+			isCampoAdicionado = true;
+		}
+
+		if (lancheDTO.getDescricao_conteudo() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " descricao_conteudo = ? ";
+			parametros.add(lancheDTO.getDescricao_conteudo());
+			isCampoAdicionado = true;
+		}
+
+		if (lancheDTO.getPreco() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " preco = ? ";
+			parametros.add(lancheDTO.getPreco());
+			isCampoAdicionado = true;
+		}
+
+		sql += " WHERE codigo = ? ";
+		parametros.add(codigo);
 
 		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
-			if (lancheDTO.getNome() != null) {
-				if (isCampoAdicionado) {
-					sql += ", ";
-				}
-
-				sql += " nome = ? ";
-				parametros.add(lancheDTO.getNome());
-			}
-
-			if (lancheDTO.getDescricao_conteudo() != null) {
-				if (isCampoAdicionado) {
-					sql += ", ";
-				}
-
-				sql += " descricao_conteudo = ? ";
-				parametros.add(lancheDTO.getDescricao_conteudo());
-			}
-
-			if (lancheDTO.getPreco() != null) {
-				if (isCampoAdicionado) {
-					sql += ", ";
-				}
-
-				sql += " preco = ? ";
-				parametros.add(lancheDTO.getPreco());
-			}
-
-			sql += " WHERE codigo = ? ";
-			parametros.add(codigo);
-
 			for (int i = 0; i < parametros.size(); i++) {
 				ps.setObject(i + 1, parametros.get(i));
 			}

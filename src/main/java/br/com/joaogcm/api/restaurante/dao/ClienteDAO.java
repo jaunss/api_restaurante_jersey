@@ -58,37 +58,40 @@ public class ClienteDAO {
 		List<Object> parametros = new ArrayList<Object>();
 		boolean isCampoAdicionado = false;
 
+		if (clienteDTO.getNome() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " nome = ? ";
+			parametros.add(clienteDTO.getNome());
+			isCampoAdicionado = true;
+		}
+
+		if (clienteDTO.getEmail() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " email = ? ";
+			parametros.add(clienteDTO.getEmail());
+			isCampoAdicionado = true;
+		}
+
+		if (clienteDTO.getTelefone() != null) {
+			if (isCampoAdicionado) {
+				sql += ", ";
+			}
+
+			sql += " telefone = ? ";
+			parametros.add(clienteDTO.getTelefone());
+			isCampoAdicionado = true;
+		}
+
+		sql += " WHERE codigo = ? ";
+		parametros.add(codigo);
+
 		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
-			if (clienteDTO.getNome() != null) {
-				if (isCampoAdicionado) {
-					sql += ", ";
-				}
-
-				sql += " nome = ? ";
-				parametros.add(clienteDTO.getNome());
-			}
-
-			if (clienteDTO.getEmail() != null) {
-				if (isCampoAdicionado) {
-					sql += ", ";
-				}
-
-				sql += " email = ? ";
-				parametros.add(clienteDTO.getEmail());
-			}
-
-			if (clienteDTO.getTelefone() != null) {
-				if (isCampoAdicionado) {
-					sql += ", ";
-				}
-
-				sql += " telefone = ? ";
-				parametros.add(clienteDTO.getTelefone());
-			}
-
-			sql += " WHERE codigo = ? ";
-			parametros.add(clienteDTO.getCodigo());
-
 			for (int i = 0; i < parametros.size(); i++) {
 				ps.setObject(i + 1, parametros.get(i));
 			}
