@@ -14,11 +14,6 @@ import br.com.joaogcm.api.restaurante.dto.LancheDTO;
 
 public class LancheDAO {
 
-	private PreparedStatement ps = null;
-	private ResultSet rs = null;
-	private ResultSet rsGerarCodigo = null;
-	private Connection conn = null;
-
 	public LancheDAO() {
 
 	}
@@ -28,22 +23,20 @@ public class LancheDAO {
 
 		String sql = "INSERT INTO lanche (nome, descricao_conteudo, preco) VALUES (?, ?, ?)";
 
-		try {
-			conn = ConexaoBancoDeDados.getConexao();
-
-			ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+		try (Connection conn = ConexaoBancoDeDados.getConexao();
+				PreparedStatement ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
 			ps.setString(1, lancheDTO.getNome());
 			ps.setString(2, lancheDTO.getDescricao_conteudo());
 			ps.setBigDecimal(3, lancheDTO.getPreco());
 
 			if (ps.executeUpdate() > 0) {
-				rsGerarCodigo = ps.getGeneratedKeys();
+				try (ResultSet rs = ps.getGeneratedKeys()) {
+					while (rs.next()) {
+						int codigoGerado = rs.getInt(1);
 
-				while (rsGerarCodigo.next()) {
-					int codigoGerado = rsGerarCodigo.getInt(1);
-
-					// objeto lancheDTO gerado
-					newLancheDTO = listarLanchePorCodigo(codigoGerado);
+						// objeto lancheDTO gerado
+						newLancheDTO = listarLanchePorCodigo(codigoGerado);
+					}
 				}
 			} else {
 				return null;
@@ -66,7 +59,7 @@ public class LancheDAO {
 
 		boolean isCampoAdicionado = false;
 
-		try {
+		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
 			if (lancheDTO.getNome() != null) {
 				if (isCampoAdicionado) {
 					sql += ", ";
@@ -97,10 +90,6 @@ public class LancheDAO {
 			sql += " WHERE codigo = ? ";
 			parametros.add(codigo);
 
-			conn = ConexaoBancoDeDados.getConexao();
-
-			ps = conn.prepareStatement(sql);
-
 			for (int i = 0; i < parametros.size(); i++) {
 				ps.setObject(i + 1, parametros.get(i));
 			}
@@ -118,10 +107,7 @@ public class LancheDAO {
 	public boolean removerLanchePorCodigo(Integer codigo) {
 		String sql = "DELETE FROM lanche WHERE codigo = ?";
 
-		try {
-			conn = ConexaoBancoDeDados.getConexao();
-
-			ps = conn.prepareStatement(sql);
+		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, codigo);
 
 			if (ps.executeUpdate() > 0) {
@@ -139,21 +125,17 @@ public class LancheDAO {
 
 		String sql = "SELECT * FROM lanche";
 
-		try {
-			conn = ConexaoBancoDeDados.getConexao();
+		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					LancheDTO lancheDTO = new LancheDTO();
+					lancheDTO.setCodigo(rs.getInt("CODIGO"));
+					lancheDTO.setNome(rs.getString("NOME"));
+					lancheDTO.setDescricao_conteudo(rs.getString("DESCRICAO_CONTEUDO"));
+					lancheDTO.setPreco(rs.getBigDecimal("PRECO"));
 
-			ps = conn.prepareStatement(sql);
-
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				LancheDTO lancheDTO = new LancheDTO();
-				lancheDTO.setCodigo(rs.getInt("CODIGO"));
-				lancheDTO.setNome(rs.getString("NOME"));
-				lancheDTO.setDescricao_conteudo(rs.getString("DESCRICAO_CONTEUDO"));
-				lancheDTO.setPreco(rs.getBigDecimal("PRECO"));
-
-				lanchesDTO.add(lancheDTO);
+					lanchesDTO.add(lancheDTO);
+				}
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException("Não foi possível listar todos os lanches: " + e.getMessage());
@@ -167,20 +149,17 @@ public class LancheDAO {
 
 		String sql = "SELECT * FROM lanche WHERE codigo = ?";
 
-		try {
-			conn = ConexaoBancoDeDados.getConexao();
-
-			ps = conn.prepareStatement(sql);
+		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, codigo);
 
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				lancheDTO = new LancheDTO();
-				lancheDTO.setCodigo(rs.getInt("CODIGO"));
-				lancheDTO.setNome(rs.getString("NOME"));
-				lancheDTO.setDescricao_conteudo(rs.getString("DESCRICAO_CONTEUDO"));
-				lancheDTO.setPreco(rs.getBigDecimal("PRECO"));
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					lancheDTO = new LancheDTO();
+					lancheDTO.setCodigo(rs.getInt("CODIGO"));
+					lancheDTO.setNome(rs.getString("NOME"));
+					lancheDTO.setDescricao_conteudo(rs.getString("DESCRICAO_CONTEUDO"));
+					lancheDTO.setPreco(rs.getBigDecimal("PRECO"));
+				}
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException("Não foi possível listar o lanche: " + e.getMessage());
@@ -195,22 +174,19 @@ public class LancheDAO {
 		String sql = "SELECT * FROM lanche l, pedido p, pedido_lanche pl " + "WHERE pl.codigo_lanche = l.codigo "
 				+ "AND pl.codigo_pedido = p.codigo " + "AND p.codigo = ?";
 
-		try {
-			conn = ConexaoBancoDeDados.getConexao();
-
-			ps = conn.prepareStatement(sql);
+		try (Connection conn = ConexaoBancoDeDados.getConexao(); PreparedStatement ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, codigo);
 
-			rs = ps.executeQuery();
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					LancheDTO lancheDTO = new LancheDTO();
+					lancheDTO.setCodigo(rs.getInt("CODIGO"));
+					lancheDTO.setNome(rs.getString("NOME"));
+					lancheDTO.setDescricao_conteudo(rs.getString("DESCRICAO_CONTEUDO"));
+					lancheDTO.setPreco(rs.getBigDecimal("PRECO"));
 
-			while (rs.next()) {
-				LancheDTO lancheDTO = new LancheDTO();
-				lancheDTO.setCodigo(rs.getInt("CODIGO"));
-				lancheDTO.setNome(rs.getString("NOME"));
-				lancheDTO.setDescricao_conteudo(rs.getString("DESCRICAO_CONTEUDO"));
-				lancheDTO.setPreco(rs.getBigDecimal("PRECO"));
-
-				lanchesDTO.add(lancheDTO);
+					lanchesDTO.add(lancheDTO);
+				}
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException("Não foi possível listar os lanches do pedido: " + e.getMessage());
