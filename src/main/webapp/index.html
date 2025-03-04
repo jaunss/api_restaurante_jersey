@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Swagger UI</title>
+<link rel="stylesheet" type="text/css"
+	href="/webjars/swagger-ui/4.15.5/swagger-ui.css">
+</head>
+<body>
+	<div id="swagger-ui"></div>
+	<script src="/webjars/swagger-ui/4.15.5/swagger-ui-bundle.js"></script>
+	<script
+		src="/webjars/swagger-ui/4.15.5/swagger-ui-standalone-preset.js"></script>
+	<script>
+		window.onload = function() {
+			window.ui = SwaggerUIBundle({
+				url : "/rs/openapi.json",
+				dom_id : '#swagger-ui',
+				presets : [ SwaggerUIBundle.presets.apis,
+						SwaggerUIStandalonePreset ],
+				layout : "StandaloneLayout"
+			});
+		};
+	</script>
+</body>
+</html>
