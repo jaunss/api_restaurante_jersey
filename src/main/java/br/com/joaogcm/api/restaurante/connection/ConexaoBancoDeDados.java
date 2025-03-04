@@ -1,8 +1,6 @@
 package br.com.joaogcm.api.restaurante.connection;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -46,35 +44,5 @@ public class ConexaoBancoDeDados {
 
 	public static Connection getConexao() throws SQLException {
 		return hikariDataSource.getConnection();
-	}
-
-	public void fecharConexao(Connection conn) {
-		try {
-			if (conn != null) {
-				conn.close();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void fecharPreparedStatement(PreparedStatement ps) {
-		try {
-			if (ps != null) {
-				ps.close();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void fecharResultSet(ResultSet rs) {
-		try {
-			if (rs != null) {
-				rs.close();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 	}
 }

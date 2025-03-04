@@ -56,7 +56,6 @@ public class PedidoDAO {
 							}
 						}
 
-						conn.commit();
 						newPedidoDTO = listarPedidoPorCodigo(codigoGerado);
 					}
 				}
@@ -169,6 +168,8 @@ public class PedidoDAO {
 
 					pedidoDTO.setTotal(rs.getBigDecimal("TOTAL"));
 					pedidoDTO.setObservacao(rs.getString("OBSERVACAO"));
+
+					pedidoDTO.setLanches(new LancheDAO().listarLanchesPorPedido(pedidoDTO.getCodigo()));
 
 					pedidosDTO.add(pedidoDTO);
 				}
