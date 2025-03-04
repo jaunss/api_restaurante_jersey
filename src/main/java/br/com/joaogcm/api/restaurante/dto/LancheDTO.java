@@ -10,9 +10,6 @@ public class LancheDTO {
 	private String nome;
 	private String descricao_conteudo;
 	private BigDecimal preco;
-	
-	// ACREDITO QUE NÃO SEJA NECESSÁRIO ESSA LISTA
-	private Set<PedidoDTO> pedidos = new HashSet<PedidoDTO>();
 
 	public LancheDTO() {
 
@@ -48,13 +45,5 @@ public class LancheDTO {
 
 	public void setPreco(BigDecimal preco) {
 		this.preco = preco;
-	}
-
-	public Set<PedidoDTO> getPedidos() {
-		return pedidos;
-	}
-
-	public void setPedidos(Set<PedidoDTO> pedidos) {
-		this.pedidos = pedidos;
 	}
 }
